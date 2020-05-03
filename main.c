@@ -32,15 +32,18 @@ int main(int argc, char* args[]){
     printf("version: ");
     printbytearray(new_transaction->version,VERSION_LEN);
     printf("Number of inputs: %d\n", new_transaction->no_of_inputs);
-    printf("(Input 0) Prev TXN Hash: ");
-    printbytearray(new_transaction->inputs[0].prev_txn_hash ,PREV_TXN_HASH_LEN);
-    printf("(Input 0) Prev Output Index: ");
-    printbytearray(new_transaction->inputs[0].prev_output_index,PREV_OUTPUT_INDEX_LEN);
-    printf("(Input 0) Script Len: %d\n",new_transaction->inputs[0].script_len,SCRIPT_LENGTH_LEN);
-    printf("(Input 0) Script: ");
-    printbytearray(new_transaction->inputs[0].script,new_transaction->inputs[0].script_len);
-    printf("(Input 0) Sequence: ");
-    printbytearray(new_transaction->inputs[0].squence,SEQ_LEN);
+    for(uint16_t i = 0 ; i < new_transaction->no_of_inputs ; i++){
+        printf("(Input %d) Prev TXN Hash: ",i);
+        printbytearray(new_transaction->inputs[i].prev_txn_hash ,PREV_TXN_HASH_LEN);
+        printf("(Input %d) Prev Output Index: ",i);
+        printbytearray(new_transaction->inputs[i].prev_output_index,PREV_OUTPUT_INDEX_LEN);
+        printf("(Input %d) Script Len: %d\n",i,new_transaction->inputs[i].script_len,SCRIPT_LENGTH_LEN);
+        printf("(Input %d) Script: ",i);
+        printbytearray(new_transaction->inputs[i].script,new_transaction->inputs[i].script_len);
+        printf("(Input %d) Sequence: ",i);
+        printbytearray(new_transaction->inputs[i].squence,SEQ_LEN);
+    }
+    
 
 
 
@@ -52,7 +55,6 @@ int main(int argc, char* args[]){
         printf("(Output %d) Script Len : %d\n",i,new_transaction->outputs[i].script_len);
         printf("(Output %d) Script: ",i);
         printbytearray((uint8_t*)new_transaction->outputs[i].script_public_key,new_transaction->outputs[i].script_len);
-        printf("\n");
     }
 
     printf("Locktime: ");
