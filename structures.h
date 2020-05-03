@@ -40,10 +40,10 @@ struct unsigned_txn{
     //Inputs sub struct 
     struct unsigned_txn_inputs* inputs;
     
-    uint8_t no_of_ouputs;
+    uint8_t no_of_outputs;
 
     //Output sub struct
-    struct unsigned_txn_ouputs *outputs;
+    struct unsigned_txn_outputs* outputs;
 
     uint8_t lock_time[LOCKTIME_LEN];
     uint8_t sig_hash_code[SIG_HASH_CODE_LEN];
