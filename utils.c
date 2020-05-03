@@ -61,11 +61,14 @@ struct unsigned_txn* construct_utxn(uint8_t *input, uint32_t len){
     while(i < output->no_of_outputs){
         memcpy((void*)&output->outputs[i],input+offset,VALUE_LEN+SCRIPT_LENGTH_LEN);
         offset+=VALUE_LEN+SCRIPT_LENGTH_LEN;
-        // printf("%d\n",offset);
+        printf("in %d\n",offset);
         output->outputs[i].script_public_key = (uint8_t*)malloc(output->outputs[i].script_len);
-        memcpy((void*)&output->outputs[i].script_public_key,input+offset,output->outputs[i].script_len);
+        memcpy(output->outputs[i].script_public_key,input+offset,output->outputs[i].script_len);
+
+                // memcpy(output->inputs[i].script,input+offset,output->inputs[i].script_len);
+
         offset+=output->outputs[i].script_len;
-        // printf("%d\n",offset);
+        printf("out %d\n",offset);
         i++;
     }
 
