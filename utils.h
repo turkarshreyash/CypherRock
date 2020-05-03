@@ -8,6 +8,13 @@ This file contains general utilities
 #include"structures.h"
 
 /*
+@para para1: byte array, para2: len of array
+@return void
+*/
+void print_byte_array(uint8_t*, uint32_t);
+
+
+/*
 string to byte array
 @para para1: string, para2: len of string, para3: byte array
 @return len of byte array

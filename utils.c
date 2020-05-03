@@ -1,5 +1,11 @@
 #include"utils.h"
 
+void print_byte_array(uint8_t *arr ,uint32_t len){
+    for(uint32_t i = 0 ; i < len ; i++){
+        printf("%x ",arr[i]);
+    }
+    printf("\n");
+}
 
 uint8_t* string_to_byte_array(int8_t *input, uint32_t len){
     uint8_t* output = (uint8_t*)malloc(((len+1)/2));
