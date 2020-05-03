@@ -1,68 +1,61 @@
 #include<stdio.h>
+#include<stdlib.h>
 #include<string.h>
+#include<inttypes.h>
 
-#include"structures.h"
 #include"utils.h"
+#include"standardsize.h"
 
-void print_byte_array(uint8_t *arr ,uint32_t len){
-    for(uint32_t i = 0 ; i < len ; i++){
-        printf("%x ",arr[i]);
+#include"lib/crypto/bip32.h"
+#include"lib/crypto/curves.h"
+
+
+int main(){
+    //declarations
+    int8_t mnemonic[160];
+    int8_t salt[MAX_SALT_SIZE];
+    uint8_t seed[SEED_SIZE];
+    HDNode *node = (HDNode*)malloc(sizeof(HDNode));
+
+    //populating mnemonics and salt
+    strcpy(mnemonic,"expire tank desert squeeze rule panic resist ocean dismiss bind shrimp mail gospel chief interest nominee already layer dutch drama genre spider love transfer");
+    strcpy(salt,"");
+
+    //calling function to get seed 512bit
+    mnemonic_to_seed(mnemonic,salt,seed,NULL);
+    printf("bip39 seed: ");
+    print_byte_array(seed,SEED_SIZE);
+    printf("------------\n");
+
+    hdnode_from_seed(seed,SEED_SIZE,SECP256K1_NAME,node);
+    hdnode_fill_public_key(node);
+
+    printf("Master:\n");
+    print_hdnode(node);
+    printf("------------\n");
+
+
+
+    hdnode_private_ckd_prime(node,44);
+    hdnode_fill_public_key(node);
+    printf("Purpose:\n");
+    print_hdnode(node);
+    printf("------------\n");
+
+    hdnode_private_ckd_prime(node,1);
+    hdnode_fill_public_key(node);
+    printf("Coin:\n");
+    print_hdnode(node);
+    printf("------------\n");
+
+    for(uint16_t i = 0 ; i < 20 ; i++){
+        
+        hdnode_private_ckd_prime(node,i);
+        hdnode_fill_public_key(node);
+        printf("----------\nAccount %d\n",i);
+        print_hdnode(node);
+        printf("----------\n");
+
     }
-    printf("\n");
-}
-
-
-
-int main(int argc, char* args[]){
-    if(argc<2){
-        printf("Byte Array Invalid\n");
-        exit(0);
-    }
-    
-    int8_t *unsigned_txn_string = args[1];
-    uint32_t unsigned_txn_string_len = strlen(unsigned_txn_string);
-
-    uint8_t *byte_array = string_to_byte_array(unsigned_txn_string, unsigned_txn_string_len);
-
-    print_byte_array(byte_array,(unsigned_txn_string_len+1)/2);
-
-
-    struct unsigned_txn* new_transaction = byte_array_to_struct(byte_array,(unsigned_txn_string_len+1)/2);
-
-    printf("version: ");
-    print_byte_array(new_transaction->version,VERSION_LEN);
-    printf("Number of inputs: %d\n", new_transaction->no_of_inputs);
-    for(uint16_t i = 0 ; i < new_transaction->no_of_inputs ; i++){
-        printf("(Input %d) Prev TXN Hash: ",i);
-        print_byte_array(new_transaction->inputs[i].prev_txn_hash ,PREV_TXN_HASH_LEN);
-        printf("(Input %d) Prev Output Index: ",i);
-        print_byte_array(new_transaction->inputs[i].prev_output_index,PREV_OUTPUT_INDEX_LEN);
-        printf("(Input %d) Script Len: %d\n",i,new_transaction->inputs[i].script_len,SCRIPT_LENGTH_LEN);
-        printf("(Input %d) Script: ",i);
-        print_byte_array(new_transaction->inputs[i].script,new_transaction->inputs[i].script_len);
-        printf("(Input %d) Sequence: ",i);
-        print_byte_array(new_transaction->inputs[i].squence,SEQ_LEN);
-    }
-    
-
-
-
-    printf("Number of outputs: %d\n",new_transaction->no_of_outputs);
-
-    for(uint16_t i = 0 ; i < new_transaction->no_of_outputs ; i++){
-        printf("(Output %d) Value: ",i);
-        print_byte_array(new_transaction->outputs[i].value,VALUE_LEN);
-        printf("(Output %d) Script Len : %d\n",i,new_transaction->outputs[i].script_len);
-        printf("(Output %d) Script: ",i);
-        print_byte_array((uint8_t*)new_transaction->outputs[i].script_public_key,new_transaction->outputs[i].script_len);
-    }
-
-    printf("Locktime: ");
-    print_byte_array(new_transaction->lock_time,LOCKTIME_LEN);
-    printf("Sighash: ");
-    print_byte_array(new_transaction->sig_hash_code,SIG_HASH_CODE_LEN);
-
-
-
 
 }

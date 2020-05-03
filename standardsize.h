@@ -17,3 +17,12 @@ This file contains all the standard feild sizes
 #define VALUE_LEN 8
 #define LOCKTIME_LEN 4
 #define SIG_HASH_CODE_LEN 4
+
+
+#define SEED_SIZE 64//bytes
+#define MAX_SALT_SIZE 256
+
+#define PRIVATE_KEY_LEN 33
+#define PUBLIC_KEY_LEN 33
+
+#define CHAIN_CODE_LEN 32

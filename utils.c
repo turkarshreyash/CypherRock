@@ -2,9 +2,29 @@
 
 void print_byte_array(uint8_t *arr ,uint32_t len){
     for(uint32_t i = 0 ; i < len ; i++){
-        printf("%x ",arr[i]);
+        printf("%x",arr[i]);
     }
     printf("\n");
+}
+
+/*
+  uint32_t depth;
+  uint32_t child_num;
+  uint8_t chain_code[32];
+
+  uint8_t private_key[32];
+  uint8_t private_key_extension[32];
+
+  uint8_t public_key[33];
+  const curve_info *curve;
+*/
+void print_hdnode(HDNode* node){
+    printf("Depth: %x\n",node->depth);
+    printf("Child Num: %x\n",node->child_num);
+    printf("Chain code: ");print_byte_array(node->chain_code,CHAIN_CODE_LEN);
+    printf("Private Key: ");print_byte_array(node->private_key,PRIVATE_KEY_LEN);
+    printf("Private Key Ext: ");print_byte_array(node->private_key_extension,PRIVATE_KEY_LEN);
+    printf("Public Key: ");print_byte_array(node->public_key,PUBLIC_KEY_LEN);
 }
 
 uint8_t* string_to_byte_array(int8_t *input, uint32_t len){
