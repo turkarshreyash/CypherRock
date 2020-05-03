@@ -1,7 +1,7 @@
 #include"utils.h"
 
 
-uint8_t* __stou8(int8_t *input, uint32_t len){
+uint8_t* string_to_byte_array(int8_t *input, uint32_t len){
     uint8_t* output = (uint8_t*)malloc(((len+1)/2));
     uint32_t o,i;
     o = i = 0;
@@ -25,7 +25,7 @@ uint8_t* __stou8(int8_t *input, uint32_t len){
 }
 
 
-struct unsigned_txn* construct_utxn(uint8_t *input, uint32_t len){
+struct unsigned_txn* byte_array_to_struct(uint8_t *input, uint32_t len){
     uint32_t offset = 0;
     struct unsigned_txn *output = (struct unsigned_txn*)malloc(sizeof(struct unsigned_txn));
     memcpy(output,input+offset,VERSION_LEN+NUMBER_OF_INPUTS_LEN);
