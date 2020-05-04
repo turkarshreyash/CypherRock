@@ -47,5 +47,32 @@ struct unsigned_txn{
 
     uint8_t lock_time[LOCKTIME_LEN];
     uint8_t sig_hash_code[SIG_HASH_CODE_LEN];
+};
+
+/*
+Struct for address type
+*/
+struct node{
+    uint8_t chain_index[INDEX_SIZE];
+    uint8_t address_index[INDEX_SIZE];
+};
+
+/*
+Structure of transaction Meta Data
+*/
+struct txn_metadata{
+    
+    uint8_t purpose_index[INDEX_SIZE];
+    uint8_t coin_index[INDEX_SIZE];
+    uint8_t account_index[INDEX_SIZE];
+
+    uint8_t input_count;
+    struct node *inputs;
+
+    uint8_t output_count;
+    struct node *outputs;
+
+    uint8_t change_count;
+    struct node *changes;
 
 };

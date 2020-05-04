@@ -9,6 +9,11 @@ This file contains general utilities
 #include"./lib/crypto/bip32.h"
 
 /*
+*/
+uint32_t uint8_t_array_to_uint32_t(uint8_t *);
+
+
+/*
 @para para1: byte array, para2: len of array
 @return void
 */
@@ -19,6 +24,12 @@ void print_byte_array(uint8_t*, uint32_t);
 return void
 */
 void print_hdnode(HDNode*);
+
+/*
+@para para1: tx meta struct*
+@return void
+*/
+void print_txn_metadata(struct txn_metadata);
 
 
 /*
@@ -35,3 +46,11 @@ byte array to struct
 @return struct
 */
 struct unsigned_txn* byte_array_to_struct(uint8_t *, uint32_t);
+
+
+/*
+transaction meta data to byte array
+@para para1: txn structure, reference to len variable
+@return byte array
+*/
+struct txn_metadata* txn_to_byte_array(uint8_t*, uint16_t);

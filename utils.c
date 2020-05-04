@@ -1,8 +1,17 @@
 #include"utils.h"
 
+uint32_t uint8_t_array_to_uint32_t(uint8_t *arr){
+    uint32_t temp = 0;
+    for(int8_t i = 0; i < 4; i++){
+        temp = temp<<8;
+        temp = temp|arr[i];
+    }
+    return temp;
+}
+
 void print_byte_array(uint8_t *arr ,uint32_t len){
     for(uint32_t i = 0 ; i < len ; i++){
-        printf("%x",arr[i]);
+        printf("%02x ",arr[i]);
     }
     printf("\n");
 }
@@ -25,6 +34,27 @@ void print_hdnode(HDNode* node){
     printf("Private Key: ");print_byte_array(node->private_key,PRIVATE_KEY_LEN);
     printf("Private Key Ext: ");print_byte_array(node->private_key_extension,PRIVATE_KEY_LEN);
     printf("Public Key: ");print_byte_array(node->public_key,PUBLIC_KEY_LEN);
+}
+
+void print_txn_metadata(struct txn_metadata input){
+    printf("purpose index: ");print_byte_array(input.purpose_index,INDEX_SIZE);
+    printf("coin index: ");print_byte_array(input.coin_index,INDEX_SIZE);
+    printf("account index: ");print_byte_array(input.account_index,INDEX_SIZE);
+    printf("no of inputs: %x\n",input.input_count);
+    for(uint8_t i = 0 ; i < input.input_count ; i++){
+        printf("input(%d) Address Index: ",i);print_byte_array(input.inputs[i].address_index,INDEX_SIZE);
+        printf("input(%d) Chain Index: ",i);print_byte_array(input.inputs[i].chain_index,INDEX_SIZE);
+    }
+    printf("no of outputs: %x\n",input.output_count);
+    for(uint8_t i = 0 ; i < input.output_count ; i++){
+        printf("output(%d) Address Index: ",i);print_byte_array(input.outputs[i].address_index,INDEX_SIZE);
+        printf("output(%d) Chain Index: ",i);print_byte_array(input.outputs[i].chain_index,INDEX_SIZE);
+    }
+    printf("no of change: %x\n",input.change_count);
+    for(uint8_t i = 0 ; i < input.change_count ; i++){
+        printf("change(%d) Address Index: ",i);print_byte_array(input.changes[i].address_index,INDEX_SIZE);
+        printf("change(%d) Chain Index: ",i);print_byte_array(input.changes[i].chain_index,INDEX_SIZE);
+    }
 }
 
 uint8_t* string_to_byte_array(int8_t *input, uint32_t len){
@@ -86,5 +116,38 @@ struct unsigned_txn* byte_array_to_struct(uint8_t *input, uint32_t len){
     }
 
     memcpy(output->lock_time,input+offset,LOCKTIME_LEN+SIG_HASH_CODE_LEN);
+    return output;
+}
+
+struct txn_metadata* txn_to_byte_array(uint8_t* input, uint16_t len){
+    struct txn_metadata *output = (struct txn_metadata*)malloc(sizeof(struct txn_metadata));
+    uint16_t offset = 0;
+
+    memcpy((void*)output,input+offset,(INDEX_SIZE*3)+1);
+    offset += INDEX_SIZE*3+1;
+    
+    output->inputs = (struct node*)malloc(sizeof(struct node)*output->input_count);
+    
+    memcpy((void*)output->inputs,input+offset,INDEX_SIZE*2*output->input_count);
+    offset += INDEX_SIZE*2*output->input_count;
+    
+    memcpy((void*)&output->output_count,input+offset,1);
+    // output->output_count=input[offset];
+    offset += 1;
+    
+    output->outputs = (struct node*)malloc(sizeof(struct node)*output->output_count);
+    
+    memcpy((void*)output->outputs,input+offset,INDEX_SIZE*2*output->output_count);
+    offset += INDEX_SIZE*2*output->output_count;
+    
+    memcpy((void*)&output->change_count,input+offset,1);
+    // output->change_count=input[offset];
+    offset += 1;
+    
+    output->changes = (struct node*)malloc(sizeof(struct node)*output->change_count);
+    
+    memcpy((void*)output->changes,input+offset,INDEX_SIZE*2*output->change_count);
+    offset += INDEX_SIZE*2*output->change_count;
+    
     return output;
 }
