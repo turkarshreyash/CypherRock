@@ -14,70 +14,22 @@ int main(){
     //declarations
     int8_t mnemonic[160];
     int8_t txn_metadata_string[96];
-    uint8_t *txn_byte_array;
+    int8_t unsigned_txn_string[298];
     int8_t salt[MAX_SALT_SIZE];
-    uint8_t seed[SEED_SIZE];
-    HDNode *node = (HDNode*)malloc(sizeof(HDNode));
-    HDNode *addr_node = (HDNode*)malloc(sizeof(HDNode));
-    char *address = (char*)malloc(256);
+
+    uint32_t length;
 
     //populating mnemonics and salt
     strcpy(mnemonic,"expire tank desert squeeze rule panic resist ocean dismiss bind shrimp mail gospel chief interest nominee already layer dutch drama genre spider love transfer");
     strcpy(txn_metadata_string,"8000002c80000001800000000100000000000000000200000000000000010000000100000000010000000100000000");
     strcpy(salt,"");
-    /*
-    struct txn_metadata{
     
-    uint8_t purpose_index[INDEX_SIZE];
-    uint8_t coin_index[INDEX_SIZE];
-    uint8_t account_index[INDEX_SIZE];
-
-    uint8_t input_count;
-    struct node *inputs;
-
-    uint8_t output_count;
-    struct node *outputs;
-
-    uint8_t change_count;
-    struct node *changes;
-
-};
-    */
-    txn_byte_array = string_to_byte_array(txn_metadata_string,95);
-    print_byte_array(txn_byte_array,96/2);
-    struct txn_metadata* txn_meta = txn_to_byte_array(txn_byte_array,96/2);
-    print_txn_metadata(*txn_meta);
-
-    mnemonic_to_seed(mnemonic,salt,seed,NULL);
-    //m
-    hdnode_from_seed(seed,SEED_SIZE,SECP256K1_NAME,node);
-    hdnode_fill_public_key(node);
-
-    //m/44'
-    hdnode_private_ckd(node,uint8_t_array_to_uint32_t(txn_meta->purpose_index));
-    hdnode_fill_public_key(node);
-
-    //m/44'/1'
-    hdnode_private_ckd(node,uint8_t_array_to_uint32_t(txn_meta->coin_index));
-    hdnode_fill_public_key(node);
-    //m/44'/1'/0'
-    hdnode_private_ckd(node,uint8_t_array_to_uint32_t(txn_meta->account_index));
-    hdnode_fill_public_key(node);
+    //UNSINGNED TRANSACTION
+    // strcpy(unsigned_txn_string,"02000000021245fe7c5455b43e73743d83ccb5587303586a4e9a5b8f56a3eb08593624bb02000000001976a914d46d05e6ac27683aa5d63a6efc44969798acf13688acfdffffff1245fe7c5455b43e73743d83ccb5587303586a4e9a5b8f56a3eb08593624bb02010000001976a914dacc24d8b195ce046a40caedd5e2e649beee4e3388acfdffffff01f4ff0000000000001976a9142d77ece155f6b80dcab97a373834543e4b70b3e988ac84431a0001000000");
+    strcpy(unsigned_txn_string,"020000000155f34eb0096d6d2972abbe086d7f4b93c22ec322ef29219a6c1c90a495dcc85a000000001976a914d323988772f6f24d7108d50524f576b3b639dfb988acfdffffff022ea30000000000001976a9148e58712486df06aa62033064a147f505801178c388ac50c30000000000001976a91447e542e7ebf9e5e590aac8fd44725ea26cb0a5cb88ac0000000001000000");
 
 
-    //m/44'/1'/0'/from_meta_data
-    struct node last_output_node = txn_meta->outputs[txn_meta->output_count-1];
-    hdnode_private_ckd(node,uint8_t_array_to_uint32_t(last_output_node.chain_index));
-    hdnode_fill_public_key(node);
-
-    hdnode_private_ckd(node,uint8_t_array_to_uint32_t(last_output_node.address_index));
-    hdnode_fill_public_key(node);
-    hdnode_get_address(node,0x6f,address,256);
-    print_hdnode(node);
-    printf("Address: %s\n",address);
-
-
-
-
+    uint8_t* singed_transaction = unsigned_to_signed(unsigned_txn_string,297,txn_metadata_string,95,mnemonic,159,salt,0,&length);
+    print_byte_array(singed_transaction,length);
 
 }
