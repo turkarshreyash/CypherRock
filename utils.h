@@ -89,3 +89,9 @@ uint8_t* serialise_unsigned_txn(struct unsigned_txn*, int32_t, uint16_t*);
 Serialise signed to byte array
 */
 uint8_t* serialise_signed_txn(struct signed_txn*, uint32_t);
+
+
+
+/*
+Electr
+*/

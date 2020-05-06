@@ -53,7 +53,7 @@ void print_unsigned_txn(struct unsigned_txn input){
         printf("input(%x) prev output index: ",i);print_byte_array(input.inputs[i].prev_output_index,PREV_OUTPUT_INDEX_LEN);
         printf("input(%x) script len: %x\n",i,input.inputs[i].script_len);
         printf("input(%x) script: ",i);print_byte_array(input.inputs[i].script,input.inputs[i].script_len);
-        printf("input(%x) sequence: \n",i);print_byte_array(input.inputs[i].squence,SEQ_LEN);
+        printf("input(%x) sequence: ",i);print_byte_array(input.inputs[i].squence,SEQ_LEN);
     }
     printf("No of outputs: %x\n",input.no_of_outputs);
     for(uint8_t i = 0 ; i < input.no_of_outputs ; i++){
@@ -186,10 +186,11 @@ uint8_t* serialise_unsigned_txn(struct unsigned_txn* unsigned_txn_in, int32_t in
     uint16_t length;
     uint16_t offset = 0;
     if(unsigned_txn_in->no_of_inputs == 1){
-        length = SIZE_OF_UNSIGNED_TXN_STRUCT(unsigned_txn_in->no_of_outputs);
+        length = SIZE_OF_UNSIGNED_TXN_STRUCT(unsigned_txn_in->no_of_outputs,unsigned_txn_in->inputs[0].script_len);
     }else{
-        length = SIZE_OF_MULTI_INPUT_UNSIGNED_TXN_STRUCT(unsigned_txn_in->no_of_inputs,unsigned_txn_in->no_of_outputs);
+        length = SIZE_OF_MULTI_INPUT_UNSIGNED_TXN_STRUCT(unsigned_txn_in->no_of_inputs,unsigned_txn_in->no_of_outputs,unsigned_txn_in->inputs[index_include].script_len);
     }
+    // printf("Length %d\n",length);
     uint8_t *unsigned_txn_out = (uint8_t*)malloc(length+1);
     memcpy(unsigned_txn_out+offset,(void*)unsigned_txn_in->version,VERSION_LEN);
     offset += VERSION_LEN;
@@ -203,11 +204,9 @@ uint8_t* serialise_unsigned_txn(struct unsigned_txn* unsigned_txn_in, int32_t in
         if(i==index_include){
             memcpy(unsigned_txn_out+offset,(void*)&unsigned_txn_in->inputs[i].script_len,1);
             offset+=1;
-            memcpy(unsigned_txn_out+offset,unsigned_txn_in->inputs[i].script,DEFAULT_UNSIGNED_TXN_SCRIPT_LEN);
-            offset+=DEFAULT_UNSIGNED_TXN_SCRIPT_LEN;
+            memcpy(unsigned_txn_out+offset,unsigned_txn_in->inputs[i].script,unsigned_txn_in->inputs[i].script_len);
+            offset+=unsigned_txn_in->inputs[i].script_len;
         }else{
-            memset(unsigned_txn_out+offset,0,1);
-            offset+=1;
             memset(unsigned_txn_out+offset,0,1);
             offset+=1;
         }
@@ -221,15 +220,15 @@ uint8_t* serialise_unsigned_txn(struct unsigned_txn* unsigned_txn_in, int32_t in
         offset+=VALUE_LEN;
         memcpy(unsigned_txn_out+offset,(void*)&unsigned_txn_in->outputs[i].script_len,SCRIPT_LENGTH_LEN);
         offset+=SCRIPT_LENGTH_LEN;
-        memcpy(unsigned_txn_out+offset,unsigned_txn_in->outputs[i].script_public_key,DEFAULT_UNSIGNED_TXN_SCRIPT_LEN);
-        offset+=DEFAULT_UNSIGNED_TXN_SCRIPT_LEN;
+        memcpy(unsigned_txn_out+offset,unsigned_txn_in->outputs[i].script_public_key,unsigned_txn_in->outputs[i].script_len);
+        offset+=unsigned_txn_in->outputs[i].script_len;
     }
     memcpy(unsigned_txn_out+offset,unsigned_txn_in->lock_time,LOCKTIME_LEN);
     offset+=LOCKTIME_LEN;
-    if(unsigned_txn_in->no_of_inputs != 1){
-        memcpy(unsigned_txn_out+offset,unsigned_txn_in->sig_hash_code,SIG_HASH_CODE_LEN);
-        offset+=SIG_HASH_CODE_LEN;
-    }
+    memcpy(unsigned_txn_out+offset,unsigned_txn_in->sig_hash_code,SIG_HASH_CODE_LEN);
+    offset+=SIG_HASH_CODE_LEN;
+    // printf("Offset %d\n",offset);
+
     *len_out = offset; 
     return unsigned_txn_out;
 }
@@ -260,8 +259,8 @@ uint8_t* serialise_signed_txn(struct signed_txn* signed_txn_struct, uint32_t len
         offset+=VALUE_LEN;
         memcpy(signed_txn_byte_array+offset,(void*)&signed_txn_struct->outputs[i].script_len,SCRIPT_LENGTH_LEN);
         offset+=SCRIPT_LENGTH_LEN;
-        memcpy(signed_txn_byte_array+offset,signed_txn_struct->outputs[i].script_public_key,DEFAULT_UNSIGNED_TXN_SCRIPT_LEN);
-        offset+=DEFAULT_UNSIGNED_TXN_SCRIPT_LEN;
+        memcpy(signed_txn_byte_array+offset,signed_txn_struct->outputs[i].script_public_key,signed_txn_struct->outputs[i].script_len);
+        offset+=signed_txn_struct->outputs[i].script_len;
     }
     memcpy(signed_txn_byte_array+offset,signed_txn_struct->lock_time,LOCKTIME_LEN);
     offset+=LOCKTIME_LEN;
@@ -290,6 +289,8 @@ int8_t* unsigned_to_signed(int8_t* unsigned_txn_string, uint32_t unsigned_txn_by
 
     uint8_t script_sig_len;
     HDNode *node = (HDNode*)malloc(sizeof(HDNode));
+    HDNode *chain_addr_node = (HDNode*)malloc(sizeof(HDNode));
+
     struct node *current_node;
     struct signed_txn* signed_txn_struct = (struct signed_txn*)malloc(sizeof(struct signed_txn));
 
@@ -299,8 +300,8 @@ int8_t* unsigned_to_signed(int8_t* unsigned_txn_string, uint32_t unsigned_txn_by
     //unsigned transaction structure constructed from unsigned_txn_string
     byte_array = string_to_byte_array(unsigned_txn_string,unsigned_txn_byte_len);
     byte_array_length =  (unsigned_txn_byte_len+1)/2;
+   
     struct unsigned_txn *unsigned_txn_struct = byte_array_to_unsigned_txn(byte_array,byte_array_length);
-
     //meta transaction structure constructed from metadata_txn_string
     byte_array = string_to_byte_array(metadata_txn_string,metadata_txn_byte_array_lenght);
     byte_array_length =  (metadata_txn_byte_array_lenght+1)/2;
@@ -308,15 +309,27 @@ int8_t* unsigned_to_signed(int8_t* unsigned_txn_string, uint32_t unsigned_txn_by
 
     //mnemonics to seed
     mnemonic_to_seed(mnemonics_string,passphrase_string,seed,NULL);
-
     //m
     hdnode_from_seed(seed,SEED_SIZE,SECP256K1_NAME,node);
+    hdnode_fill_public_key(node);
+    
+    
+
     //m/44'
+
     hdnode_private_ckd(node,uint8_t_array_to_uint32_t(txn_metadata_struct->purpose_index));
+    hdnode_fill_public_key(node);
+    
+
     //m/44'/1'
     hdnode_private_ckd(node,uint8_t_array_to_uint32_t(txn_metadata_struct->coin_index));
+    hdnode_fill_public_key(node);
+    
+
     //m/44'/1'/0'
     hdnode_private_ckd(node,uint8_t_array_to_uint32_t(txn_metadata_struct->account_index));
+    hdnode_fill_public_key(node);
+    
 
     //copy version
     memcpy(signed_txn_struct->version,unsigned_txn_struct->version,VERSION_LEN);
@@ -335,7 +348,7 @@ int8_t* unsigned_to_signed(int8_t* unsigned_txn_string, uint32_t unsigned_txn_by
     while (i < signed_txn_struct->no_of_outputs){
         memcpy(signed_txn_struct->outputs[i].value,unsigned_txn_struct->outputs[i].value,VALUE_LEN);
         memcpy((void*)&signed_txn_struct->outputs[i].script_len,(void*)&unsigned_txn_struct->outputs[i].script_len,1);
-        signed_txn_struct->outputs[i].script_public_key = (uint8_t*)malloc(sizeof(signed_txn_struct->outputs[i].script_len));
+        signed_txn_struct->outputs[i].script_public_key = (uint8_t*)malloc(signed_txn_struct->outputs[i].script_len);
         memcpy(signed_txn_struct->outputs[i].script_public_key,unsigned_txn_struct->outputs[i].script_public_key,signed_txn_struct->outputs[i].script_len);
         offset += VALUE_LEN+1+signed_txn_struct->outputs[i].script_len;
         i++;
@@ -343,7 +356,7 @@ int8_t* unsigned_to_signed(int8_t* unsigned_txn_string, uint32_t unsigned_txn_by
     //copy lock time
     memcpy(signed_txn_struct->lock_time,unsigned_txn_struct->lock_time,LOCKTIME_LEN);
     offset+=LOCKTIME_LEN;
-
+    struct unsigned_txn* temp;
     //allocate memory to input space
     signed_txn_struct->inputs = (struct txn_inputs*)malloc(sizeof(struct txn_inputs)*signed_txn_struct->no_of_inputs);
     i = 0;
@@ -354,37 +367,50 @@ int8_t* unsigned_to_signed(int8_t* unsigned_txn_string, uint32_t unsigned_txn_by
         offset+=PREV_TXN_HASH_LEN+PREV_OUTPUT_INDEX_LEN+SEQ_LEN;
 
         // Generating private key and signing>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        hdnode_private_ckd(node,uint8_t_array_to_uint32_t(txn_metadata_struct->inputs[i].chain_index));
-        hdnode_private_ckd(node,uint8_t_array_to_uint32_t(txn_metadata_struct->inputs[i].address_index));
-        hdnode_fill_public_key(node);
+        memcpy(chain_addr_node,node,sizeof(HDNode));
+        hdnode_private_ckd(chain_addr_node,uint8_t_array_to_uint32_t(txn_metadata_struct->inputs[i].chain_index));
+        hdnode_fill_public_key(chain_addr_node);
 
+        hdnode_private_ckd(chain_addr_node,uint8_t_array_to_uint32_t(txn_metadata_struct->inputs[i].address_index));
+        hdnode_fill_public_key(chain_addr_node);
+        // print_hdnode(chain_addr_node);
         to_sign_byte_array = serialise_unsigned_txn(unsigned_txn_struct,i,&to_sign_byte_array_length);
+        print_byte_array(to_sign_byte_array,to_sign_byte_array_length);
 
-        sha256_Raw(to_sign_byte_array,to_sign_byte_array_length, to_sign_byte_array);
-        sha256_Raw(to_sign_byte_array, 32, to_sign_byte_array);
-        ecdsa_sign_digest(&secp256k1, node->private_key, to_sign_byte_array, sig, NULL, NULL);
+        sha256_Raw(to_sign_byte_array, to_sign_byte_array_length, digest);
+        sha256_Raw(digest, 32, to_sign_byte_array);
+        printf("Digest: ");
+        print_byte_array(to_sign_byte_array,32);    
+
+        //-------
+        ecdsa_sign_digest(&secp256k1, chain_addr_node->private_key, to_sign_byte_array, sig, NULL, NULL);
+        printf("private key: ");print_byte_array(chain_addr_node->private_key,32);
         der_sig_len = ecdsa_sig_to_der(sig, der_sig); 
-
-        script_sig_len = der_sig_len + 36;
-        script_sig = (uint8_t*)malloc(script_sig_len);
-        pushdata_opcode_der = der_sig_len+1;
-
-        memcpy(script_sig, &pushdata_opcode_der, 1);
+        printf("SIG: ");
+        print_byte_array(sig,64);
+        uint8_t script_sig_len = der_sig_len + 36;//PUSHDATA Opcode(1) + der_sig_len + SigHash Code(1) + PUSHDATA Opcode(1) + Public Key(33)
+        script_sig = (uint8_t*)malloc(script_sig_len);//check, assuming malloc allocates fresh memory every time.
+    
+        
+        memset(script_sig,der_sig_len+1,1);
         memcpy(script_sig+1, der_sig, der_sig_len);
-        memcpy(script_sig+1+der_sig_len, &sighash_code, 1);
-        memcpy(script_sig+1+der_sig_len+1, &pushdata_opcode_pub, 1);
-        memcpy(script_sig+1+der_sig_len+1+1, node->public_key, 33);
-        signed_txn_struct->inputs[i].script = (uint8_t*)malloc(script_sig_len);
+        memset(script_sig+1+der_sig_len,0x1, 1);
+        memset(script_sig+1+der_sig_len+1,0x21, 1);
+        memcpy(script_sig+1+der_sig_len+1+1, chain_addr_node->public_key, 33);
         //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Generating Private Key and signing
-
-
+        signed_txn_struct->inputs[i].script = (uint8_t*)malloc(script_sig_len);
         memcpy(signed_txn_struct->inputs[i].script, script_sig, script_sig_len);
         memcpy((void*)&signed_txn_struct->inputs[i].script_len,(void*)&script_sig_len,1);
         offset+=script_sig_len+1;
+
         
         i++;
     }
     uint8_t *signed_txn_byte_array = serialise_signed_txn(signed_txn_struct,offset);
     *signed_txn_len = offset;
+    print_signed_txn(*signed_txn_struct);
     return signed_txn_byte_array;
 }
+
+//59d7060f17083d52be1057a7625846e5cfdb6d33b1c44ba191811681e1043fa9
+//59d7060f17083d52be1057a7625846e5cfdb6d33b1c44ba191811681e1043fa9
